@@ -308,8 +308,8 @@
           <input class="form-input" id="roster-search" placeholder="Search by name or class…" style="flex:1;min-width:180px;" oninput="renderRoster()">
           <select class="form-select" id="roster-rank-filter" style="min-width:140px;" onchange="renderRoster()">
             <option value="">All Ranks</option>
-            <option>Steel</option><option>Red</option><option>Gold</option><option>Green</option>
-            <option>Blue</option><option>Pink</option><option>Purple</option><option>Black</option>
+            <option>Steel</option><option>Green</option><option>Blue</option><option>Pink</option>
+            <option>Red</option><option>Purple</option><option>Gold</option><option>Black</option>
           </select>
         </div>
         <div id="roster-content"></div>
@@ -461,7 +461,7 @@
 ════════════════════════════════════════ */
 const STORAGE_KEY = 'guild_registry_v2';
 const DEFAULT_PIN = '1234';
-const RANKS = ['Steel','Red','Gold','Green','Blue','Pink','Purple','Black'];
+const RANKS = ['Steel','Green','Blue','Pink','Red','Purple','Gold','Black'];
 const RANK_THEMES = {
   Steel:  { dot:'#9a9080', flavor:'The Uninitiated', lore:'Raw iron, unforged. You have potential — but no proof.' },
   Red:    { dot:'#c23030', flavor:'The Blooded',     lore:'You have seen combat and survived. Dangerous, but unrefined.' },
@@ -472,7 +472,7 @@ const RANK_THEMES = {
   Purple: { dot:'#8844cc', flavor:'The Sovereign',   lore:'Near-mythic. Commands respect from kingdoms and monsters alike.' },
   Black:  { dot:'#c8a830', flavor:'The Nameless',    lore:'Transcendent. So far beyond ranking that the guild stopped trying. A title whispered, never announced.' },
 };
-const DEFAULT_QUEST_REQS = { Steel:0, Red:3, Gold:8, Green:15, Blue:24, Pink:35, Purple:50, Black:70 };
+const DEFAULT_QUEST_REQS = { Steel:0, Green:3, Blue:8, Pink:15, Red:24, Purple:35, Gold:50, Black:70 };
 
 let state = { players:[], adminPin: DEFAULT_PIN, questReqs: {...DEFAULT_QUEST_REQS} };
 let isAdmin = false;
