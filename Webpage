@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adventurers' Guild Registry</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1208;
+    --ink-light: #3d2e10;
+    --parchment: #f5ecd4;
+    --parchment-dark: #e8d9b5;
+    --parchment-deeper: #d9c898;
+    --gold: #c8922a;
+    --gold-light: #e4b84a;
+    --gold-dim: #8a6219;
+    --teal: #1d6e6a;
+    --crimson: #8b1a1a;
+    --crimson-light: #c23030;
+    --stone: #5c5040;
+    --stone-light: #8a7560;
+    --border: #c9a85c;
+    --border-dim: #d9c080;
+  }
+
+  body {
+    background-color: #2a1f0e;
+    background-image: radial-gradient(ellipse at 20% 10%, #3d2a0a 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, #1a0f05 0%, transparent 50%);
+    min-height: 100vh;
+    font-family: 'EB Garamond', Georgia, serif;
+    color: var(--ink);
+  }
+
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 260px; flex-shrink: 0;
+    background: linear-gradient(180deg, #1e1508 0%, #120d04 100%);
+    border-right: 2px solid var(--gold-dim);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .sidebar-header { padding: 28px 20px 20px; border-bottom: 1px solid var(--gold-dim); text-align: center; }
+  .guild-crest { width: 60px; height: 60px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--gold-dim); border-radius: 50%; font-size: 28px; }
+  .sidebar-title { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 600; color: var(--gold-light); letter-spacing: 0.12em; text-transform: uppercase; line-height: 1.4; }
+  .sidebar-subtitle { font-size: 11px; color: var(--gold-dim); letter-spacing: 0.06em; margin-top: 4px; font-family: 'Inter', sans-serif; text-transform: uppercase; }
+  .admin-badge { display: inline-block; margin-top: 8px; font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 2px; background: rgba(200,146,42,0.2); color: var(--gold-light); border: 1px solid var(--gold-dim); }
+  .sidebar-nav { padding: 16px 12px; }
+  .nav-section-label { font-family: 'Cinzel', serif; font-size: 9px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-dim); padding: 16px 8px 6px; }
+  .nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border: none; background: transparent; color: var(--parchment-dark); font-family: 'EB Garamond', serif; font-size: 14px; cursor: pointer; border-radius: 4px; text-align: left; transition: background 0.15s, color 0.15s; }
+  .nav-btn:hover { background: rgba(200,146,42,0.12); color: var(--gold-light); }
+  .nav-btn.active { background: rgba(200,146,42,0.2); color: var(--gold-light); border-left: 2px solid var(--gold); }
+  .nav-btn svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+  .player-list { padding: 0 12px 12px; }
+  .player-list-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 4px; cursor: pointer; color: var(--parchment-dark); font-size: 13px; font-family: 'EB Garamond', serif; border: 1px solid transparent; transition: all 0.15s; }
+  .player-list-item:hover { background: rgba(200,146,42,0.1); color: var(--gold-light); }
+  .player-list-item.active { background: rgba(200,146,42,0.18); color: var(--gold-light); border-color: rgba(200,146,42,0.3); }
+  .player-rank-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .player-name-short { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .player-level-badge { font-size: 10px; font-family: 'Inter', sans-serif; color: var(--gold-dim); flex-shrink: 0; }
+  .unspent-pip { width: 6px; height: 6px; border-radius: 50%; background: #e4b84a; flex-shrink: 0; }
+
+  /* ── Main ── */
+  .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .topbar { background: linear-gradient(90deg, #1e1508, #120d04); border-bottom: 2px solid var(--gold-dim); padding: 14px 28px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  .topbar h1 { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 600; color: var(--gold-light); letter-spacing: 0.06em; flex: 1; }
+  .topbar-actions { display: flex; gap: 8px; align-items: center; }
+  .content { flex: 1; overflow-y: auto; background: var(--parchment); }
+  .view { display: none; padding: 28px 32px; }
+  .view.active { display: block; }
+
+  /* ── Buttons ── */
+  .btn { font-family: 'Cinzel', serif; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 16px; border: 1px solid; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--gold); color: #1a1208; border-color: var(--gold-light); }
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn-ghost { background: transparent; color: var(--gold-light); border-color: var(--gold-dim); }
+  .btn-ghost:hover { background: rgba(200,146,42,0.15); border-color: var(--gold); }
+  .btn-danger { background: transparent; color: #c23030; border-color: #8b1a1a; }
+  .btn-danger:hover { background: rgba(139,26,26,0.15); }
+  .btn-sm { padding: 4px 10px; font-size: 10px; }
+  .btn-teal { background: transparent; color: #1d9b95; border-color: #1d6e6a; }
+  .btn-teal:hover { background: rgba(29,107,106,0.12); }
+
+  /* ── Dashboard ── */
+  .dash-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .dash-stat { background: white; border: 1px solid var(--border-dim); border-radius: 6px; padding: 16px; text-align: center; }
+  .dash-stat-num { font-family: 'Cinzel', serif; font-size: 28px; font-weight: 700; color: var(--ink); line-height: 1; }
+  .dash-stat-label { font-size: 11px; font-family: 'Inter', sans-serif; color: var(--stone-light); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; }
+
+  /* ── Roster ── */
+  .section-heading { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 600; color: var(--ink-light); letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid var(--border-dim); padding-bottom: 8px; margin-bottom: 16px; }
+  .roster-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .roster-table th { font-family: 'Cinzel', serif; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stone-light); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border-dim); background: var(--parchment-dark); }
+  .roster-table td { padding: 10px 12px; border-bottom: 1px solid var(--parchment-deeper); vertical-align: middle; }
+  .roster-table tr:hover td { background: rgba(200,146,42,0.06); cursor: pointer; }
+  .stat-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .stat-bar-bg { flex: 1; height: 6px; background: var(--parchment-deeper); border-radius: 3px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .stat-val { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--stone); min-width: 24px; text-align: right; }
+  .stat-might { background: #c23030; }
+  .stat-body  { background: #1d9b95; }
+  .stat-mind  { background: #7a5a10; }
+
+  /* ── Player detail ── */
+  .player-header { display: flex; align-items: flex-start; gap: 24px; background: white; border: 1px solid var(--border-dim); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+  .player-avatar { width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 26px; font-weight: 700; color: var(--gold-dim); background: var(--parchment-dark); flex-shrink: 0; }
+  .player-header-info { flex: 1; }
+  .player-header-name { font-family: 'Cinzel', serif; font-size: 22px; font-weight: 700; color: var(--ink); }
+  .player-header-class { font-size: 15px; color: var(--stone-light); font-style: italic; margin-top: 2px; }
+  .player-header-meta { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  .meta-pill { font-family: 'Inter', sans-serif; font-size: 12px; padding: 3px 10px; border-radius: 3px; border: 1px solid var(--border-dim); color: var(--stone); background: var(--parchment); }
+  .cards-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .card { background: white; border: 1px solid var(--border-dim); border-radius: 8px; padding: 18px 20px; }
+  .card-title { font-family: 'Cinzel', serif; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stone-light); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--parchment-deeper); }
+  .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .stat-row:last-child { margin-bottom: 0; }
+  .stat-label { font-size: 13px; color: var(--stone); width: 56px; flex-shrink: 0; }
+  .resource-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--parchment-deeper); gap: 8px; }
+  .resource-row:last-child { border-bottom: none; }
+  .resource-name { font-size: 13px; color: var(--ink-light); }
+  .resource-val { font-family: 'Cinzel', serif; font-size: 15px; color: var(--ink); font-weight: 600; }
+  .notes-area { background: white; border: 1px solid var(--border-dim); border-radius: 8px; padding: 18px 20px; margin-bottom: 20px; }
+  .ornament { text-align: center; color: var(--border); font-size: 18px; letter-spacing: 6px; margin: 6px 0 20px; }
+
+  /* ── Unspent points panel ── */
+  .unspent-banner {
+    background: linear-gradient(90deg, #2a1e08, #1e1508);
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .unspent-banner-text { flex: 1; }
+  .unspent-banner-title { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 600; color: var(--gold-light); letter-spacing: 0.06em; }
+  .unspent-banner-sub { font-size: 13px; color: var(--gold-dim); margin-top: 2px; }
+  .stat-allocate-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .stat-allocate-row:last-child { margin-bottom: 0; }
+  .alloc-btn { width: 26px; height: 26px; border: 1px solid var(--border-dim); border-radius: 3px; background: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--stone); transition: all 0.12s; }
+  .alloc-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-dim); background: #fdf6e3; }
+  .alloc-btn:disabled { opacity: 0.3; cursor: default; }
+  .alloc-val { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; min-width: 28px; text-align: center; }
+
+  /* ── Rank badge system ── */
+  .rank-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-family: 'Cinzel', serif; font-weight: 600; letter-spacing: 0.06em; padding: 3px 9px; border-radius: 2px; border: 1px solid; }
+  .rank-badge .rank-pip { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* rank colors — bg / text / border / dot */
+  .rank-Steel       { background: #e8e6e0; color: #3a3530; border-color: #9a9080; }
+  .rank-Red         { background: #f5dada; color: #7a1a1a; border-color: #c23030; }
+  .rank-Gold        { background: #f8f0d8; color: #7a5a10; border-color: #c8922a; }
+  .rank-Green       { background: #e0f0da; color: #2a5a18; border-color: #4a9a28; }
+  .rank-Blue        { background: #d8e8f8; color: #1a3a6a; border-color: #2a6aaa; }
+  .rank-Pink        { background: #fce8f4; color: #7a2060; border-color: #cc44aa; }
+  .rank-Purple      { background: #ece0f8; color: #4a1a7a; border-color: #8844cc; }
+  .rank-Black       { background: #1a1a1a; color: #e0c870; border-color: #4a4030; }
+
+  .dot-Steel   { background: #9a9080; }
+  .dot-Red     { background: #c23030; }
+  .dot-Gold    { background: #c8922a; }
+  .dot-Green   { background: #4a9a28; }
+  .dot-Blue    { background: #2a6aaa; }
+  .dot-Pink    { background: #cc44aa; }
+  .dot-Purple  { background: #8844cc; }
+  .dot-Black   { background: #c8a830; }
+
+  /* ── Quest log ── */
+  .quest-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--parchment-deeper); }
+  .quest-row:last-child { border-bottom: none; }
+  .quest-name { flex: 1; font-size: 14px; color: var(--ink-light); }
+  .quest-date { font-size: 11px; font-family: 'Inter', sans-serif; color: var(--stone-light); }
+
+  /* ── Rank legend ── */
+  .rank-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .rank-legend-card { background: white; border: 1px solid var(--border-dim); border-radius: 6px; padding: 14px 16px; }
+  .rank-legend-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .rank-legend-title { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 600; }
+  .rank-legend-flavor { font-size: 13px; color: var(--stone-light); font-style: italic; line-height: 1.5; }
+  .rank-legend-quests { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--stone); margin-top: 6px; }
+
+  /* ── Forms ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-family: 'Cinzel', serif; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stone); }
+  .form-input, .form-select, .form-textarea { padding: 8px 12px; border: 1px solid var(--border-dim); border-radius: 4px; background: white; font-family: 'EB Garamond', serif; font-size: 14px; color: var(--ink); outline: none; transition: border-color 0.15s; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(200,146,42,0.15); }
+  .form-textarea { resize: vertical; min-height: 70px; }
+  .range-row { display: flex; align-items: center; gap: 10px; }
+  .range-val { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--gold-dim); min-width: 32px; text-align: center; }
+  .resource-editor { display: flex; flex-direction: column; gap: 8px; }
+  .resource-edit-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+  .icon-btn { width: 28px; height: 28px; border: 1px solid var(--border-dim); border-radius: 3px; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--stone); transition: all 0.15s; }
+  .icon-btn.del:hover { border-color: var(--crimson); color: var(--crimson); }
+
+  /* ── Modal ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10,7,2,0.75); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--parchment); border: 2px solid var(--border); border-radius: 8px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .modal-title { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border-dim); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--parchment-deeper); }
+
+  /* ── PIN gate ── */
+  .pin-gate { position: fixed; inset: 0; background: rgba(10,7,2,0.88); z-index: 200; display: flex; align-items: center; justify-content: center; }
+  .pin-box { background: var(--parchment); border: 2px solid var(--border); border-radius: 8px; padding: 36px 32px; text-align: center; max-width: 340px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .pin-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .pin-sub { font-size: 14px; color: var(--stone-light); margin-bottom: 24px; }
+  .pin-input { width: 100%; padding: 12px; font-family: 'Cinzel', serif; font-size: 22px; letter-spacing: 0.3em; text-align: center; border: 2px solid var(--border-dim); border-radius: 4px; background: white; color: var(--ink); outline: none; margin-bottom: 12px; }
+  .pin-input:focus { border-color: var(--gold); }
+  .pin-error { font-size: 13px; color: var(--crimson-light); min-height: 18px; margin-bottom: 10px; }
+
+  /* ── Toast ── */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 0.06em; padding: 10px 18px; border-radius: 4px; border: 1px solid var(--gold-dim); transform: translateY(60px); opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--stone-light); }
+  .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state h3 { font-family: 'Cinzel', serif; font-size: 16px; color: var(--stone); margin-bottom: 6px; }
+  .empty-state p { font-size: 14px; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .cards-row { grid-template-columns: 1fr; }
+    .view { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Admin PIN Gate ── -->
+<div class="pin-gate" id="pin-gate">
+  <div class="pin-box">
+    <div style="font-size:36px;margin-bottom:12px;">⚔️</div>
+    <div class="pin-title">Guild Registry</div>
+    <div class="pin-sub">Enter your access code to continue.</div>
+    <input class="pin-input" id="pin-input" type="password" maxlength="8" placeholder="····" autocomplete="off" oninput="tryPin()">
+    <div class="pin-error" id="pin-error"></div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:4px;" onclick="enterAsPlayer()">Enter as Adventurer (view only)</button>
+    <div style="font-size:11px;color:var(--stone-light);margin-top:16px;font-family:'Inter',sans-serif;">Default admin code: <strong>1234</strong><br>Change it in Admin Settings.</div>
+  </div>
+</div>
+
+<div class="shell">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="guild-crest">⚔️</div>
+      <div class="sidebar-title">Adventurers'<br>Guild Registry</div>
+      <div class="sidebar-subtitle">Chapter Ledger</div>
+      <div id="admin-badge" style="display:none;"><div class="admin-badge">⚙ Guild Master</div></div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <button class="nav-btn active" data-view="dashboard" onclick="showView('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </button>
+      <button class="nav-btn" data-view="roster" onclick="showView('roster')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Full Roster
+      </button>
+      <button class="nav-btn" data-view="ranks" onclick="showView('ranks')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Rank Codex
+      </button>
+      <div id="admin-nav" style="display:none;">
+        <div class="nav-section-label">Admin</div>
+        <button class="nav-btn" data-view="admin" onclick="showView('admin')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+          Admin Panel
+        </button>
+      </div>
+    </div>
+    <div class="nav-section-label" style="padding-left:20px;">Adventurers</div>
+    <div class="player-list" id="sidebar-player-list"></div>
+    <div style="padding:12px 16px 16px;border-top:1px solid var(--gold-dim);margin-top:auto;">
+      <button class="btn btn-ghost btn-sm" style="width:100%;" onclick="showPinGate()">🔒 Switch Access</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="topbar-title">Guild Overview</h1>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content">
+
+      <!-- Dashboard -->
+      <div class="view active" id="view-dashboard">
+        <div class="ornament">— ⁂ —</div>
+        <div class="dash-stats" id="dash-stats"></div>
+        <div class="section-heading">Recent Adventurers</div>
+        <div id="dash-recent"></div>
+      </div>
+
+      <!-- Roster -->
+      <div class="view" id="view-roster">
+        <div class="ornament">— ⁂ —</div>
+        <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;">
+          <input class="form-input" id="roster-search" placeholder="Search by name or class…" style="flex:1;min-width:180px;" oninput="renderRoster()">
+          <select class="form-select" id="roster-rank-filter" style="min-width:140px;" onchange="renderRoster()">
+            <option value="">All Ranks</option>
+            <option>Steel</option><option>Red</option><option>Gold</option><option>Green</option>
+            <option>Blue</option><option>Pink</option><option>Purple</option><option>Black</option>
+          </select>
+        </div>
+        <div id="roster-content"></div>
+      </div>
+
+      <!-- Rank Codex -->
+      <div class="view" id="view-ranks">
+        <div class="ornament">— ⁂ —</div>
+        <div class="section-heading">The Chromatic Ascension</div>
+        <p style="font-size:14px;color:var(--stone-light);margin-bottom:20px;font-style:italic;">Each rank represents a stage of the adventurer's journey — not merely power, but philosophy. Ranks are earned through completed quests, witnessed by the Guild.</p>
+        <div class="rank-legend" id="rank-legend"></div>
+      </div>
+
+      <!-- Player Detail -->
+      <div class="view" id="view-player">
+        <div id="player-detail-content"></div>
+      </div>
+
+      <!-- Admin Panel -->
+      <div class="view" id="view-admin">
+        <div class="ornament">— ⁂ —</div>
+        <div class="section-heading">Guild Master Controls</div>
+        <div class="cards-row" style="margin-bottom:24px;">
+          <div class="card">
+            <div class="card-title">Change Admin PIN</div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="form-label">New PIN (4–8 digits)</label>
+              <input class="form-input" id="new-pin" type="password" maxlength="8" placeholder="New PIN">
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label">Confirm PIN</label>
+              <input class="form-input" id="confirm-pin" type="password" maxlength="8" placeholder="Confirm">
+            </div>
+            <button class="btn btn-primary" onclick="changePin()">Update PIN</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Quest Requirements</div>
+            <p style="font-size:13px;color:var(--stone-light);margin-bottom:14px;font-style:italic;">Quests needed to advance to each rank.</p>
+            <div id="quest-req-editor"></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="saveQuestReqs()">Save Requirements</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Data</div>
+            <p style="font-size:13px;color:var(--stone-light);margin-bottom:14px;">Export or import the full registry as JSON.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button class="btn btn-ghost" onclick="exportData()">Export Registry</button>
+              <label class="btn btn-ghost" style="text-align:center;cursor:pointer;">Import Registry<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Player / Edit Modal -->
+<div class="modal-overlay" id="player-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Enlist New Adventurer</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Character Name</label>
+        <input class="form-input" id="f-name" placeholder="e.g. Aldric the Bold">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Class / Archetype</label>
+        <input class="form-input" id="f-class" placeholder="e.g. Ranger, Mage…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Player (Real Name)</label>
+        <input class="form-input" id="f-player" placeholder="Optional">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Resources</label>
+        <div class="resource-editor" id="f-resources-editor"></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="addResourceRow()">+ Add Resource</button>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="f-notes" placeholder="Background, special abilities, campaign notes…"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('player-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePlayer()">Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Level-Up Modal (admin only) -->
+<div class="modal-overlay" id="levelup-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">Grant Level Up</div>
+    <p style="font-size:14px;color:var(--stone-light);margin-bottom:16px;">This will grant <strong id="lu-name">the adventurer</strong> one level and <strong>3 unspent stat points</strong> to assign.</p>
+    <div style="background:var(--parchment-dark);border-radius:6px;padding:14px 16px;font-size:13px;color:var(--stone);">
+      Current level: <span id="lu-current-level" style="font-family:'Cinzel',serif;font-weight:700;"></span><br>
+      After level-up: <span id="lu-next-level" style="font-family:'Cinzel',serif;font-weight:700;color:var(--gold-dim);"></span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('levelup-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmLevelUp()">Grant Level</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quest Modal (admin only) -->
+<div class="modal-overlay" id="quest-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title">Record Quest Completion</div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label">Quest Name</label>
+      <input class="form-input" id="q-name" placeholder="e.g. The Sunken Vault">
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="q-date" type="date">
+    </div>
+    <p id="quest-rank-note" style="font-size:13px;color:var(--teal);margin-bottom:4px;"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('quest-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmQuest()">Record Quest</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rank-up Modal (admin only) -->
+<div class="modal-overlay" id="rankup-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">⬆ Advance Rank</div>
+    <p style="font-size:14px;color:var(--stone-light);margin-bottom:16px;">Manually advance <strong id="ru-name"></strong> to the next rank.</p>
+    <div style="display:flex;align-items:center;gap:16px;background:var(--parchment-dark);border-radius:6px;padding:14px 16px;">
+      <span id="ru-from" class="rank-badge"></span>
+      <span style="color:var(--stone-light);font-size:18px;">→</span>
+      <span id="ru-to" class="rank-badge"></span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('rankup-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRankUp()">Advance Rank</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════
+   DATA & CONSTANTS
+════════════════════════════════════════ */
+const STORAGE_KEY = 'guild_registry_v2';
+const DEFAULT_PIN = '1234';
+const RANKS = ['Steel','Red','Gold','Green','Blue','Pink','Purple','Black'];
+const RANK_THEMES = {
+  Steel:  { dot:'#9a9080', flavor:'The Uninitiated', lore:'Raw iron, unforged. You have potential — but no proof.' },
+  Red:    { dot:'#c23030', flavor:'The Blooded',     lore:'You have seen combat and survived. Dangerous, but unrefined.' },
+  Gold:   { dot:'#c8922a', flavor:'The Gilded',      lore:'Skilled and sought after. The rank most civilians know by reputation.' },
+  Green:  { dot:'#4a9a28', flavor:'The Wayfarer',    lore:'Wisdom of the wilds. Those who have walked far roads and returned changed.' },
+  Blue:   { dot:'#2a6aaa', flavor:'The Resolute',    lore:'Veterans of loss. Those who failed and returned stronger — a rank earned through adversity.' },
+  Pink:   { dot:'#cc44aa', flavor:'The Touched',     lore:'Marked by something beyond mortal — fate, magic, destiny. Rare and unsettling to meet.' },
+  Purple: { dot:'#8844cc', flavor:'The Sovereign',   lore:'Near-mythic. Commands respect from kingdoms and monsters alike.' },
+  Black:  { dot:'#c8a830', flavor:'The Nameless',    lore:'Transcendent. So far beyond ranking that the guild stopped trying. A title whispered, never announced.' },
+};
+const DEFAULT_QUEST_REQS = { Steel:0, Red:3, Gold:8, Green:15, Blue:24, Pink:35, Purple:50, Black:70 };
+
+let state = { players:[], adminPin: DEFAULT_PIN, questReqs: {...DEFAULT_QUEST_REQS} };
+let isAdmin = false;
+let editingId = null;
+let currentView = 'dashboard';
+let viewingPlayerId = null;
+let levelUpTargetId = null;
+let questTargetId = null;
+let rankUpTargetId = null;
+
+/* ════════════════════════════════════════
+   PERSISTENCE
+════════════════════════════════════════ */
+function loadState() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) state = JSON.parse(r); } catch(e) {}
+  if (!state.players) state.players = [];
+  if (!state.adminPin) state.adminPin = DEFAULT_PIN;
+  if (!state.questReqs) state.questReqs = {...DEFAULT_QUEST_REQS};
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+/* ════════════════════════════════════════
+   AUTH
+════════════════════════════════════════ */
+function tryPin() {
+  const val = document.getElementById('pin-input').value;
+  if (val.length < 4) return;
+  if (val === state.adminPin) {
+    isAdmin = true;
+    hidePinGate();
+    document.getElementById('admin-badge').style.display = '';
+    document.getElementById('admin-nav').style.display = '';
+    toast('Welcome, Guild Master.');
+  } else if (val.length >= 4) {
+    document.getElementById('pin-error').textContent = 'Incorrect code.';
+    document.getElementById('pin-input').value = '';
+  }
+}
+function enterAsPlayer() {
+  isAdmin = false;
+  hidePinGate();
+  document.getElementById('admin-badge').style.display = 'none';
+  document.getElementById('admin-nav').style.display = 'none';
+}
+function showPinGate() {
+  document.getElementById('pin-gate').style.display = 'flex';
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('pin-input').focus();
+}
+function hidePinGate() { document.getElementById('pin-gate').style.display = 'none'; }
+function changePin() {
+  const np = document.getElementById('new-pin').value;
+  const cp = document.getElementById('confirm-pin').value;
+  if (np.length < 4) { toast('PIN must be at least 4 digits.'); return; }
+  if (np !== cp) { toast('PINs do not match.'); return; }
+  state.adminPin = np;
+  saveState();
+  document.getElementById('new-pin').value = '';
+  document.getElementById('confirm-pin').value = '';
+  toast('PIN updated.');
+}
+
+/* ════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════ */
+function showView(view, playerId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.getElementById('view-' + view).classList.add('active');
+  currentView = view;
+  const actions = document.getElementById('topbar-actions');
+
+  if (view === 'player' && playerId) {
+    viewingPlayerId = playerId;
+    const p = state.players.find(x => x.id === playerId);
+    document.getElementById('topbar-title').textContent = p ? p.name : 'Adventurer';
+    if (isAdmin) {
+      actions.innerHTML = `
+        <button class="btn btn-teal btn-sm" onclick="openQuestModal('${playerId}')">+ Quest</button>
+        <button class="btn btn-ghost btn-sm" onclick="openLevelUpModal('${playerId}')">▲ Level Up</button>
+        <button class="btn btn-ghost btn-sm" onclick="openRankUpModal('${playerId}')">⬆ Rank Up</button>
+        <button class="btn btn-ghost btn-sm" onclick="openEditModal('${playerId}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePlayer('${playerId}')">Remove</button>
+      `;
+    } else {
+      actions.innerHTML = '';
+    }
+    renderPlayerDetail(playerId);
+  } else {
+    viewingPlayerId = null;
+    const titles = { dashboard:'Guild Overview', roster:'Full Roster', ranks:'Rank Codex', admin:'Admin Panel' };
+    document.getElementById('topbar-title').textContent = titles[view] || '';
+    if (isAdmin && (view === 'dashboard' || view === 'roster')) {
+      actions.innerHTML = `<button class="btn btn-primary" onclick="openNewPlayerModal()">+ Enlist Adventurer</button>`;
+    } else { actions.innerHTML = ''; }
+    if (view === 'dashboard') renderDashboard();
+    if (view === 'roster') renderRoster();
+    if (view === 'ranks') renderRankCodex();
+    if (view === 'admin') renderAdminPanel();
+  }
+  renderSidebar();
+}
+
+/* ════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════ */
+function renderSidebar() {
+  const list = document.getElementById('sidebar-player-list');
+  const sorted = [...state.players].sort((a,b) => {
+    const ri = RANKS.indexOf(b.rank) - RANKS.indexOf(a.rank);
+    return ri !== 0 ? ri : a.name.localeCompare(b.name);
+  });
+  if (!sorted.length) {
+    list.innerHTML = '<div style="padding:8px 10px;font-size:12px;color:#8a7560;font-family:EB Garamond,serif;">No adventurers yet</div>';
+    return;
+  }
+  list.innerHTML = sorted.map(p => {
+    const unspent = (p.unspentPoints||0) > 0;
+    return `<div class="player-list-item ${currentView==='player'&&viewingPlayerId===p.id?'active':''}" onclick="showView('player','${p.id}')">
+      <div class="player-rank-dot dot-${p.rank}"></div>
+      <span class="player-name-short">${esc(p.name)}</span>
+      ${unspent ? '<div class="unspent-pip" title="Unspent stat points"></div>' : ''}
+      <span class="player-level-badge">Lv${p.level}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════ */
+function renderDashboard() {
+  const ps = state.players;
+  const avgLevel = ps.length ? Math.round(ps.reduce((a,p)=>a+p.level,0)/ps.length) : 0;
+  const topRank = RANKS.slice().reverse().find(r => ps.some(p=>p.rank===r)) || '—';
+  const veterans = ps.filter(p => RANKS.indexOf(p.rank) >= 4).length;
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="dash-stat"><div class="dash-stat-num">${ps.length}</div><div class="dash-stat-label">Adventurers</div></div>
+    <div class="dash-stat"><div class="dash-stat-num">${avgLevel||'—'}</div><div class="dash-stat-label">Avg Level</div></div>
+    <div class="dash-stat"><div class="dash-stat-num">${veterans}</div><div class="dash-stat-label">Blue Rank +</div></div>
+    <div class="dash-stat"><div class="dash-stat-num">${topRank}</div><div class="dash-stat-label">Highest Rank</div></div>
+  `;
+  const recent = [...ps].sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,8);
+  document.getElementById('dash-recent').innerHTML = recent.length
+    ? `<table class="roster-table"><thead><tr><th>Name</th><th>Class</th><th>Rank</th><th>Level</th><th>Might</th><th>Body</th><th>Mind</th></tr></thead><tbody>${recent.map(rosterRow).join('')}</tbody></table>`
+    : `<div class="empty-state"><div class="empty-state-icon">📜</div><h3>The registry is empty</h3><p>Enlist your first adventurer to begin.</p></div>`;
+}
+
+/* ════════════════════════════════════════
+   ROSTER
+════════════════════════════════════════ */
+function renderRoster() {
+  const q = (document.getElementById('roster-search')?.value||'').toLowerCase();
+  const rf = document.getElementById('roster-rank-filter')?.value||'';
+  const ps = state.players.filter(p =>
+    (!q || p.name.toLowerCase().includes(q) || (p.charClass||'').toLowerCase().includes(q)) &&
+    (!rf || p.rank === rf)
+  ).sort((a,b)=>{ const ri=RANKS.indexOf(b.rank)-RANKS.indexOf(a.rank); return ri||a.name.localeCompare(b.name); });
+  document.getElementById('roster-content').innerHTML = ps.length
+    ? `<table class="roster-table"><thead><tr><th>Name</th><th>Class</th><th>Rank</th><th>Level</th><th>Might</th><th>Body</th><th>Mind</th></tr></thead><tbody>${ps.map(rosterRow).join('')}</tbody></table>`
+    : `<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>No adventurers found</h3><p>${state.players.length===0?'Enlist your first adventurer.':'Try a different search.'}</p></div>`;
+}
+
+function rosterRow(p) {
+  const maxStat = totalStatCap(p.level);
+  return `<tr onclick="showView('player','${p.id}')">
+    <td style="font-family:'Cinzel',serif;font-weight:600;">${esc(p.name)}${(p.unspentPoints||0)>0?'<span style="color:var(--gold);font-size:10px;margin-left:6px;">●</span>':''}</td>
+    <td style="color:var(--stone-light);font-style:italic;">${esc(p.charClass||'—')}</td>
+    <td>${rankBadge(p.rank)}</td>
+    <td style="font-family:'Cinzel',serif;">${p.level}</td>
+    <td>${statMini(p.might, maxStat, 'stat-might')}</td>
+    <td>${statMini(p.body,  maxStat, 'stat-body')}</td>
+    <td>${statMini(p.mind,  maxStat, 'stat-mind')}</td>
+  </tr>`;
+}
+
+function statMini(val,max,cls) {
+  const pct = Math.min(100, Math.round((val/max)*100));
+  return `<div class="stat-bar-wrap"><div class="stat-bar-bg"><div class="stat-bar-fill ${cls}" style="width:${pct}%"></div></div><span class="stat-val">${val}</span></div>`;
+}
+
+function rankBadge(rank) {
+  const t = RANK_THEMES[rank]||{dot:'#888'};
+  return `<span class="rank-badge rank-${rank}"><span class="rank-pip" style="background:${t.dot}"></span>${rank}</span>`;
+}
+
+/* ════════════════════════════════════════
+   PLAYER DETAIL
+════════════════════════════════════════ */
+function totalStatCap(level) { return 3 + (level * 3); }
+
+function renderPlayerDetail(id) {
+  const p = state.players.find(x=>x.id===id);
+  if (!p) { document.getElementById('player-detail-content').innerHTML='<div class="empty-state"><p>Player not found.</p></div>'; return; }
+
+  const initials = p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const resources = p.resources||[];
+  const quests = p.quests||[];
+  const unspent = p.unspentPoints||0;
+  const maxStat = totalStatCap(p.level);
+  const rankIdx = RANKS.indexOf(p.rank);
+  const nextRankName = rankIdx < RANKS.length-1 ? RANKS[rankIdx+1] : null;
+  const reqForNext = nextRankName ? (state.questReqs[nextRankName]||0) : null;
+  const questsDone = quests.length;
+  const progressPct = nextRankName && reqForNext > 0 ? Math.min(100, Math.round((questsDone / reqForNext)*100)) : 100;
+
+  let unspentHtml = '';
+  if (unspent > 0) {
+    unspentHtml = `
+    <div class="unspent-banner" id="alloc-panel">
+      <div class="unspent-banner-text">
+        <div class="unspent-banner-title">✦ ${unspent} Unspent Stat Point${unspent>1?'s':''}</div>
+        <div class="unspent-banner-sub">Allocate your points below, then confirm.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="confirmAllocate('${id}')">Confirm Allocation</button>
+    </div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">Allocate Points — ${unspent} remaining</div>
+      <div class="stat-allocate-row">
+        <span class="stat-label" style="width:56px;">Might</span>
+        <button class="alloc-btn" onclick="allocate('${id}','might',-1)" id="alloc-might-down">−</button>
+        <span class="alloc-val" id="alloc-might-val">${p.might}</span>
+        <button class="alloc-btn" onclick="allocate('${id}','might',1)" id="alloc-might-up">+</button>
+      </div>
+      <div class="stat-allocate-row">
+        <span class="stat-label" style="width:56px;">Body</span>
+        <button class="alloc-btn" onclick="allocate('${id}','body',-1)" id="alloc-body-down">−</button>
+        <span class="alloc-val" id="alloc-body-val">${p.body}</span>
+        <button class="alloc-btn" onclick="allocate('${id}','body',1)" id="alloc-body-up">+</button>
+      </div>
+      <div class="stat-allocate-row">
+        <span class="stat-label" style="width:56px;">Mind</span>
+        <button class="alloc-btn" onclick="allocate('${id}','mind',-1)" id="alloc-mind-down">−</button>
+        <span class="alloc-val" id="alloc-mind-val">${p.mind}</span>
+        <button class="alloc-btn" onclick="allocate('${id}','mind',1)" id="alloc-mind-up">+</button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('player-detail-content').innerHTML = `
+    <div class="ornament">— ⁂ —</div>
+    ${unspentHtml}
+    <div class="player-header">
+      <div class="player-avatar">${initials}</div>
+      <div class="player-header-info">
+        <div class="player-header-name">${esc(p.name)}</div>
+        <div class="player-header-class">${esc(p.charClass||'Adventurer')}</div>
+        <div class="player-header-meta">
+          ${rankBadge(p.rank)}
+          <span class="meta-pill">Level ${p.level}</span>
+          ${p.player?`<span class="meta-pill">Player: ${esc(p.player)}</span>`:''}
+          ${unspent>0?`<span class="meta-pill" style="color:var(--gold-dim);border-color:var(--gold);">✦ ${unspent} pts to assign</span>`:''}
+        </div>
+      </div>
+    </div>
+
+    <div class="cards-row">
+      <div class="card">
+        <div class="card-title">Combat Stats</div>
+        <div class="stat-row">
+          <span class="stat-label">Might</span>
+          <div class="stat-bar-bg" style="flex:1"><div class="stat-bar-fill stat-might" style="width:${Math.min(100,Math.round((p.might/maxStat)*100))}%"></div></div>
+          <span class="stat-val" style="font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:#c23030;">${p.might}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Body</span>
+          <div class="stat-bar-bg" style="flex:1"><div class="stat-bar-fill stat-body" style="width:${Math.min(100,Math.round((p.body/maxStat)*100))}%"></div></div>
+          <span class="stat-val" style="font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:#1d9b95;">${p.body}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Mind</span>
+          <div class="stat-bar-bg" style="flex:1"><div class="stat-bar-fill stat-mind" style="width:${Math.min(100,Math.round((p.mind/maxStat)*100))}%"></div></div>
+          <span class="stat-val" style="font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:#7a5a10;">${p.mind}</span>
+        </div>
+        <div style="font-size:11px;font-family:Inter,sans-serif;color:var(--stone-light);margin-top:10px;text-align:right;">Total: ${p.might+p.body+p.mind} / ${maxStat}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Resources</div>
+        ${resources.length===0
+          ? '<div style="color:var(--stone-light);font-size:13px;font-style:italic;">No resources tracked</div>'
+          : resources.map(r=>`<div class="resource-row"><span class="resource-name">${esc(r.name)}</span><span class="resource-val">${r.value}</span></div>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="card-title">Guild Standing</div>
+        <div style="text-align:center;padding:6px 0 10px;">
+          ${rankBadge(p.rank)}
+          <div style="font-size:12px;font-family:Inter,sans-serif;color:var(--stone-light);margin-top:8px;font-style:italic;">${RANK_THEMES[p.rank]?.flavor||''}</div>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-family:Inter,sans-serif;color:var(--stone-light);margin-bottom:4px;">
+            <span>Quests: ${questsDone}</span>
+            <span>${nextRankName ? `${reqForNext} needed for ${nextRankName}` : '— Pinnacle reached —'}</span>
+          </div>
+          <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${progressPct}%;background:var(--gold);"></div></div>
+        </div>
+      </div>
+    </div>
+
+    ${quests.length > 0 ? `
+    <div class="notes-area" style="margin-bottom:20px;">
+      <div class="card-title" style="margin-bottom:10px;">Quest Log (${questsDone})</div>
+      ${quests.slice().reverse().map(q=>`
+        <div class="quest-row">
+          <span class="quest-name">⚔ ${esc(q.name)}</span>
+          <span class="quest-date">${q.date||''}</span>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${p.notes ? `
+    <div class="notes-area">
+      <div class="card-title" style="margin-bottom:10px;">Field Notes & Background</div>
+      <p style="font-size:15px;line-height:1.7;color:var(--ink-light);white-space:pre-wrap;">${esc(p.notes)}</p>
+    </div>` : ''}
+  `;
+
+  if (unspent > 0) updateAllocUI(id);
+}
+
+/* ── Stat allocation ── */
+let allocDelta = {}; // temporary delta while player is allocating
+
+function allocate(id, stat, dir) {
+  const p = state.players.find(x=>x.id===id);
+  if (!p) return;
+  if (!allocDelta[id]) allocDelta[id] = { might:0, body:0, mind:0 };
+  const unspent = (p.unspentPoints||0) - (allocDelta[id].might + allocDelta[id].body + allocDelta[id].mind);
+  if (dir > 0 && unspent <= 0) return;
+  const current = p[stat] + (allocDelta[id][stat]||0);
+  if (dir < 0 && allocDelta[id][stat] <= 0) return; // can't go below base
+  allocDelta[id][stat] = (allocDelta[id][stat]||0) + dir;
+  updateAllocUI(id);
+}
+
+function updateAllocUI(id) {
+  const p = state.players.find(x=>x.id===id);
+  if (!p) return;
+  if (!allocDelta[id]) allocDelta[id] = {might:0,body:0,mind:0};
+  const d = allocDelta[id];
+  const spent = d.might + d.body + d.mind;
+  const unspent = (p.unspentPoints||0) - spent;
+  ['might','body','mind'].forEach(s => {
+    const vEl = document.getElementById(`alloc-${s}-val`);
+    const dEl = document.getElementById(`alloc-${s}-down`);
+    const uEl = document.getElementById(`alloc-${s}-up`);
+    if (vEl) vEl.textContent = p[s] + (d[s]||0);
+    if (dEl) dEl.disabled = (d[s]||0) <= 0;
+    if (uEl) uEl.disabled = unspent <= 0;
+  });
+  const panel = document.getElementById('alloc-panel');
+  if (panel) {
+    panel.querySelector('.unspent-banner-title').textContent = `✦ ${unspent} Unspent Stat Point${unspent!==1?'s':''}`;
+    panel.querySelector('.unspent-banner-sub').textContent = unspent > 0 ? 'Allocate your points below, then confirm.' : 'All points allocated — confirm when ready.';
+  }
+  const cardTitle = document.querySelector('#player-detail-content .card-title');
+  if (cardTitle && cardTitle.textContent.startsWith('Allocate')) {
+    cardTitle.textContent = `Allocate Points — ${unspent} remaining`;
+  }
+}
+
+function confirmAllocate(id) {
+  const p = state.players.find(x=>x.id===id);
+  if (!p) return;
+  const d = allocDelta[id]||{};
+  const spent = (d.might||0)+(d.body||0)+(d.mind||0);
+  if (spent === 0) { toast('Assign at least one point first.'); return; }
+  const remaining = (p.unspentPoints||0) - spent;
+  if (remaining < 0) { toast('Error: overspent.'); return; }
+  p.might += d.might||0;
+  p.body  += d.body||0;
+  p.mind  += d.mind||0;
+  p.unspentPoints = remaining;
+  delete allocDelta[id];
+  saveState();
+  toast('Stats updated!');
+  renderPlayerDetail(id);
+  renderSidebar();
+}
+
+/* ════════════════════════════════════════
+   RANK CODEX
+════════════════════════════════════════ */
+function renderRankCodex() {
+  document.getElementById('rank-legend').innerHTML = RANKS.map(r => {
+    const t = RANK_THEMES[r];
+    const req = state.questReqs[r]||0;
+    return `<div class="rank-legend-card">
+      <div class="rank-legend-header">
+        ${rankBadge(r)}
+        <span class="rank-legend-title" style="color:var(--ink-light);">${t.flavor}</span>
+      </div>
+      <div class="rank-legend-flavor">"${t.lore}"</div>
+      <div class="rank-legend-quests">${req === 0 ? 'Starting rank' : `Requires ${req} quests`}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════
+   ADMIN PANEL
+════════════════════════════════════════ */
+function renderAdminPanel() {
+  document.getElementById('quest-req-editor').innerHTML = RANKS.slice(1).map(r => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      ${rankBadge(r)}
+      <input class="form-input" type="number" id="qr-${r}" value="${state.questReqs[r]||0}" min="0" style="width:80px;font-size:13px;text-align:center;">
+      <span style="font-size:12px;font-family:Inter,sans-serif;color:var(--stone-light);">quests</span>
+    </div>`).join('');
+}
+
+function saveQuestReqs() {
+  RANKS.slice(1).forEach(r => {
+    const el = document.getElementById(`qr-${r}`);
+    if (el) state.questReqs[r] = parseInt(el.value)||0;
+  });
+  saveState();
+  toast('Quest requirements saved.');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'guild-registry.json';
+  a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!imported.players) throw new Error('Invalid file');
+      state = imported;
+      if (!state.adminPin) state.adminPin = DEFAULT_PIN;
+      if (!state.questReqs) state.questReqs = {...DEFAULT_QUEST_REQS};
+      saveState();
+      toast('Registry imported!');
+      showView('dashboard');
+    } catch(err) { toast('Invalid registry file.'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ════════════════════════════════════════
+   PLAYER CRUD
+════════════════════════════════════════ */
+function openNewPlayerModal() {
+  if (!isAdmin) return;
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Enlist New Adventurer';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-class').value = '';
+  document.getElementById('f-player').value = '';
+  document.getElementById('f-notes').value = '';
+  renderResourceEditor([]);
+  document.getElementById('player-modal').classList.add('open');
+  document.getElementById('f-name').focus();
+}
+
+function openEditModal(id) {
+  if (!isAdmin) return;
+  const p = state.players.find(x=>x.id===id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit Record — ' + p.name;
+  document.getElementById('f-name').value = p.name;
+  document.getElementById('f-class').value = p.charClass||'';
+  document.getElementById('f-player').value = p.player||'';
+  document.getElementById('f-notes').value = p.notes||'';
+  renderResourceEditor(p.resources||[]);
+  document.getElementById('player-modal').classList.add('open');
+}
+
+function savePlayer() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { toast('A name is required.'); return; }
+  const resources = collectResources();
+  const data = {
+    name,
+    charClass: document.getElementById('f-class').value.trim(),
+    player: document.getElementById('f-player').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    resources,
+  };
+  if (editingId) {
+    const idx = state.players.findIndex(x=>x.id===editingId);
+    if (idx >= 0) state.players[idx] = {...state.players[idx], ...data};
+    toast('Record updated.');
+  } else {
+    data.id = uid();
+    data.created = Date.now();
+    data.rank = 'Steel';
+    data.level = 1;
+    data.might = 3; data.body = 3; data.mind = 3;
+    data.unspentPoints = 0;
+    data.quests = [];
+    state.players.push(data);
+    toast('Adventurer enlisted!');
+  }
+  saveState();
+  closeModal('player-modal');
+  if (currentView==='dashboard') renderDashboard();
+  if (currentView==='roster') renderRoster();
+  if (currentView==='player') renderPlayerDetail(editingId||data.id);
+  renderSidebar();
+}
+
+function deletePlayer(id) {
+  const p = state.players.find(x=>x.id===id);
+  if (!p) return;
+  if (!confirm(`Remove ${p.name} from the registry? This cannot be undone.`)) return;
+  state.players = state.players.filter(x=>x.id!==id);
+  saveState();
+  toast('Adventurer removed.');
+  showView('roster');
+}
+
+/* ════════════════════════════════════════
+   LEVEL UP (admin only)
+════════════════════════════════════════ */
+function openLevelUpModal(id) {
+  if (!isAdmin) return;
+  const p = state.players.find(x=>x.id===id);
+  if (!p) return;
+  levelUpTargetId = id;
+  document.getElementById('lu-name').textContent = p.name;
+  document.getElementById('lu-current-level').textContent = p.level;
+  document.getElementById('lu-next-level').textContent = p.level + 1;
+  document.getElementById('levelup-modal').classList.add('open');
+}
+
+function confirmLevelUp() {
+  const p = state.players.find(x=>x.id===levelUpTargetId);
+  if (!p) return;
+  p.level += 1;
+  p.unspentPoints = (p.unspentPoints||0) + 3;
+  saveState();
+  closeModal('levelup-modal');
+  toast(`${p.name} is now level ${p.level}! +3 stat points to assign.`);
+  renderPlayerDetail(levelUpTargetId);
+  renderSidebar();
+}
+
+/* ════════════════════════════════════════
+   QUEST LOG (admin only)
+════════════════════════════════════════ */
+function openQuestModal(id) {
+  if (!isAdmin) return;
+  questTargetId = id;
+  const p = state.players.find(x=>x.id===id);
+  if (!p) return;
+  document.getElementById('q-name').value = '';
+  document.getElementById('q-date').value = new Date().toISOString().slice(0,10);
+  const questsDone = (p.quests||[]).length + 1;
+  const rankIdx = RANKS.indexOf(p.rank);
+  const nextRank = rankIdx < RANKS.length-1 ? RANKS[rankIdx+1] : null;
+  const reqForNext = nextRank ? (state.questReqs[nextRank]||0) : 0;
+  const noteEl = document.getElementById('quest-rank-note');
+  if (nextRank && questsDone >= reqForNext) {
+    noteEl.textContent = `★ This quest will meet the requirement for ${nextRank} rank!`;
+    noteEl.style.color = '#c8922a';
+  } else if (nextRank) {
+    noteEl.textContent = `${questsDone} / ${reqForNext} quests toward ${nextRank}`;
+    noteEl.style.color = '#1d9b95';
+  } else {
+    noteEl.textContent = 'Already at the pinnacle rank.';
+    noteEl.style.color = '#8a7560';
+  }
+  document.getElementById('quest-modal').classList.add('open');
+  document.getElementById('q-name').focus();
+}
+
+function confirmQuest() {
+  const name = document.getElementById('q-name').value.trim();
+  if (!name) { toast('Enter a quest name.'); return; }
+  const p = state.players.find(x=>x.id===questTargetId);
+  if (!p) return;
+  if (!p.quests) p.quests = [];
+  p.quests.push({ name, date: document.getElementById('q-date').value });
+  saveState();
+  closeModal('quest-modal');
+  toast(`Quest recorded for ${p.name}.`);
+  renderPlayerDetail(questTargetId);
+}
+
+/* ════════════════════════════════════════
+   RANK UP (admin only)
+════════════════════════════════════════ */
+function openRankUpModal(id) {
+  if (!isAdmin) return;
+  const p = state.players.find(x=>x.id===id);
+  if (!p) return;
+  const rankIdx = RANKS.indexOf(p.rank);
+  if (rankIdx >= RANKS.length-1) { toast(`${p.name} is already at Black rank — the pinnacle.`); return; }
+  rankUpTargetId = id;
+  document.getElementById('ru-name').textContent = p.name;
+  document.getElementById('ru-from').className = `rank-badge rank-${p.rank}`;
+  document.getElementById('ru-from').innerHTML = `<span class="rank-pip" style="background:${RANK_THEMES[p.rank].dot}"></span>${p.rank}`;
+  const nextRank = RANKS[rankIdx+1];
+  document.getElementById('ru-to').className = `rank-badge rank-${nextRank}`;
+  document.getElementById('ru-to').innerHTML = `<span class="rank-pip" style="background:${RANK_THEMES[nextRank].dot}"></span>${nextRank}`;
+  document.getElementById('rankup-modal').classList.add('open');
+}
+
+function confirmRankUp() {
+  const p = state.players.find(x=>x.id===rankUpTargetId);
+  if (!p) return;
+  const rankIdx = RANKS.indexOf(p.rank);
+  if (rankIdx >= RANKS.length-1) return;
+  p.rank = RANKS[rankIdx+1];
+  saveState();
+  closeModal('rankup-modal');
+  toast(`${p.name} advances to ${p.rank} rank!`);
+  renderPlayerDetail(rankUpTargetId);
+  renderSidebar();
+}
+
+/* ════════════════════════════════════════
+   RESOURCES
+════════════════════════════════════════ */
+function renderResourceEditor(resources) {
+  document.getElementById('f-resources-editor').innerHTML = '';
+  resources.forEach(r => addResourceRow(r.name, r.value));
+}
+function addResourceRow(name='', value=0) {
+  const el = document.getElementById('f-resources-editor');
+  const row = document.createElement('div');
+  row.className = 'resource-edit-row';
+  row.innerHTML = `
+    <input class="form-input res-name" placeholder="Resource name" value="${esc(String(name))}" style="font-size:13px;">
+    <input class="form-input res-val" type="number" placeholder="0" value="${value}" style="width:72px;font-size:13px;text-align:center;">
+    <button class="icon-btn del" onclick="this.parentElement.remove()" title="Remove">✕</button>`;
+  el.appendChild(row);
+}
+function collectResources() {
+  return [...document.querySelectorAll('#f-resources-editor .resource-edit-row')].map(row=>({
+    name: row.querySelector('.res-name').value.trim(),
+    value: parseInt(row.querySelector('.res-val').value)||0,
+  })).filter(r=>r.name);
+}
+
+/* ════════════════════════════════════════
+   UTILITIES
+════════════════════════════════════════ */
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2600);
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ════════════════════════════════════════
+   EVENT LISTENERS
+════════════════════════════════════════ */
+['player-modal','levelup-modal','quest-modal','rankup-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e){ if(e.target===this) closeModal(id); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') ['player-modal','levelup-modal','quest-modal','rankup-modal'].forEach(closeModal);
+});
+document.getElementById('pin-input').addEventListener('keydown', e => {
+  if (e.key==='Enter') tryPin();
+});
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+loadState();
+renderSidebar();
+renderDashboard();
+</script>
+</body>
+</html>
